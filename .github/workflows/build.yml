@@ -1,0 +1,49 @@
+name: Build Torchlight2SharedStashManager
+
+on:
+  push:
+    branches: [ '*' ]
+    paths:
+      - '**.cpp'
+      - '**.h'
+      - '**.pro'
+      - '**.ui'
+      - '**.qrc'
+      - '.github/workflows/build.yml'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Install Qt5.15.2 MinGW8.1
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '5.15.2'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_mingw81'
+          # 直接删除modules，安装完整Qt包，彻底规避模块名称解析报错
+          cache: true
+
+      - name: Create build folder
+        run: mkdir build
+
+      - name: Build via qmake + mingw32-make
+        run: |
+          cd build
+          qmake ../Torchlight2ItemDatabaseConstructor.pro
+          mingw32-make -j4
+
+      - name: Deploy Qt DLLs
+        run: |
+          cd build\release
+          windeployqt Torchlight2ItemDatabaseConstructor.exe
+
+      - name: Upload compiled artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Torchlight2ItemDatabaseConstructor-Win64
+          path: build/release/
